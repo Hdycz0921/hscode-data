@@ -1,0 +1,66 @@
+name: Sync likes.json
+
+on:
+  schedule:
+    # Every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch likes data from Issues
+        run: |
+          echo "{}" > likes.json
+
+          # Fetch all issues from hscode-likes repo
+          LIKES_REPO="Hdycz0921/hscode-likes"
+          PAGE=1
+          while true; do
+            RESP=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${LIKES_REPO}/issues?state=all&per_page=100&page=${PAGE}")
+            COUNT=$(echo "$RESP" | jq length)
+            if [ "$COUNT" -eq 0 ]; then break; fi
+
+            echo "$RESP" | jq -c '.[] | select(.title != null)' | while read -r issue; do
+              TITLE=$(echo "$issue" | jq -r '.title')
+              STATE=$(echo "$issue" | jq -r '.state')
+              BODY=$(echo "$issue" | jq -r '.body')
+              CREATED=$(echo "$issue" | jq -r '.created_at')
+              UPDATED=$(echo "$issue" | jq -r '.updated_at')
+
+              if [ "$TITLE" = "like_batch" ]; then
+                # 'like_batch' issues have body as JSON
+                echo "$BODY" | jq -c '.' > /tmp/batch.json
+                jq -s '.[0] * .[1]' likes.json /tmp/batch.json > likes_new.json
+                mv likes_new.json likes.json
+              fi
+            done
+
+            PAGE=$((PAGE + 1))
+          done
+
+          echo "Generated likes.json with $(jq length likes.json) entries"
+
+      - name: Commit and push
+        run: |
+          git config user.name "hscode-data-bot"
+          git config user.email "hscode-data-bot@users.noreply.github.com"
+          git add likes.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: sync likes.json from issues [skip ci]"
+            git push
+          fi
