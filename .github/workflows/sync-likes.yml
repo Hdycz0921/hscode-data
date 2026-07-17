@@ -23,35 +23,49 @@ jobs:
       - name: Fetch likes data from Issues
         run: |
           echo "{}" > likes.json
-
-          # Fetch all issues from hscode-likes repo
           LIKES_REPO="Hdycz0921/hscode-likes"
           PAGE=1
           while true; do
             RESP=$(curl -s -H "Authorization: token ${{ secrets.GH_PAT }}" \
-              "https://api.github.com/repos/${LIKES_REPO}/issues?state=all&per_page=100&page=${PAGE}")
+              "https://api.github.com/repos/${LIKES_REPO}/issues?state=all&labels=like-data&per_page=100&page=${PAGE}")
             COUNT=$(echo "$RESP" | jq length)
             if [ "$COUNT" -eq 0 ]; then break; fi
 
-            echo "$RESP" | jq -c '.[] | select(.title != null)' | while read -r issue; do
+            echo "$RESP" | jq -c '.[]' | while read -r issue; do
               TITLE=$(echo "$issue" | jq -r '.title')
               STATE=$(echo "$issue" | jq -r '.state')
               BODY=$(echo "$issue" | jq -r '.body')
-              CREATED=$(echo "$issue" | jq -r '.created_at')
-              UPDATED=$(echo "$issue" | jq -r '.updated_at')
-
-              if [ "$TITLE" = "like_batch" ]; then
-                # 'like_batch' issues have body as JSON
-                echo "$BODY" | jq -c '.' > /tmp/batch.json
-                jq -s '.[0] * .[1]' likes.json /tmp/batch.json > likes_new.json
-                mv likes_new.json likes.json
+              
+              # Only process [LIKE] titled issues (created by cloud function)
+              if echo "$TITLE" | grep -q '^\[LIKE\]'; then
+                # Extract keyword and code from title: [LIKE] keyword::code
+                KEY=$(echo "$TITLE" | sed 's/^\[LIKE\] //' | sed 's/::/___/')
+                # Parse body JSON
+                if echo "$BODY" | jq -e '.' > /dev/null 2>&1; then
+                  BODY_DATA=$(echo "$BODY")
+                  VALID=$(echo "$BODY_DATA" | jq -r '.like + .unlike + (.total | length // 0)' 2>/dev/null || echo "0")
+                  if [ "$VALID" != "0" ]; then
+                    WEIGHT=$(echo "$BODY_DATA" | jq '(.like // 0) - (.unlike // 0)' 2>/dev/null || echo "0")
+                    if [ "$STATE" = "closed" ]; then
+                      # Closed = cancelled, weight 0
+                      WEIGHT=0
+                    fi
+                    # Write entry as keyword::hs_code -> {like, unlike, weight}
+                    jq --arg k "$KEY" --argjson l "$(echo "$BODY_DATA" | jq '.like // 0')" \
+                       --argjson u "$(echo "$BODY_DATA" | jq '.unlike // 0')" \
+                       --argjson w "$WEIGHT" \
+                       '.[$k] = {like: $l, unlike: $u, weight: $w}' likes.json > likes_new.json
+                    mv likes_new.json likes.json
+                  fi
+                fi
               fi
             done
 
             PAGE=$((PAGE + 1))
           done
 
-          echo "Generated likes.json with $(jq length likes.json) entries"
+          ENTRY_COUNT=$(jq length likes.json)
+          echo "✅ Generated likes.json with ${ENTRY_COUNT} entries"
 
       - name: Commit and push
         run: |
