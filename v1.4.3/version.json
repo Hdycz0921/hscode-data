@@ -1,0 +1,20 @@
+{
+  "version": "1.4.3.1",
+  "dataVersion": "2026-07-19",
+  "buildTime": 1784455630935,
+  "files": {
+    "airports/iata.json": 740484,
+    "airports/icao.json": 178024,
+    "airports/locode.json": 1438121,
+    "airports/province_map.json": 7078,
+    "airports/foreign_cn.json": 5106,
+    "tariff/p1.json": 316058,
+    "tariff/p2.json": 318735,
+    "tariff/p3.json": 328906,
+    "tariff/p4.json": 316095,
+    "tariff/p5.json": 333698,
+    "dual/dual.json": 51940,
+    "dual/precursor.json": 9096,
+    "hscode/index.json": 13613
+  }
+}
