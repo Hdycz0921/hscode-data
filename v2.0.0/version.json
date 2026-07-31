@@ -1,1 +1,75 @@
-{"dataVersion":"2026-07-31","files":{"tariff/p3.json":592294,"tariff/p5.json":856800,"tariff/p1.json":595185,"tariff/p2.json":1294760,"tariff/p4.json":989656},"version":"2.0.0","buildTime":1785509192390}
+{
+  "dataVersion": "2026-07-31",
+  "files": [
+    {
+      "name": "tariff/p1.json",
+      "size": 594944
+    },
+    {
+      "name": "tariff/p2.json",
+      "size": 1294336
+    },
+    {
+      "name": "tariff/p3.json",
+      "size": 591872
+    },
+    {
+      "name": "tariff/p4.json",
+      "size": 989184
+    },
+    {
+      "name": "tariff/p5.json",
+      "size": 857088
+    },
+    {
+      "name": "airports/iata_p1.json",
+      "size": 384000
+    },
+    {
+      "name": "airports/iata_p2.json",
+      "size": 373760
+    },
+    {
+      "name": "airports/icao.json",
+      "size": 182272
+    },
+    {
+      "name": "airports/foreign_cn.json",
+      "size": 5120
+    },
+    {
+      "name": "airports/locode_p1.json",
+      "size": 370688
+    },
+    {
+      "name": "airports/locode_p2.json",
+      "size": 377856
+    },
+    {
+      "name": "airports/locode_p3.json",
+      "size": 353280
+    },
+    {
+      "name": "airports/locode_p4.json",
+      "size": 369664
+    },
+    {
+      "name": "airports/province_map.json",
+      "size": 7168
+    },
+    {
+      "name": "dual/dual.json",
+      "size": 52224
+    },
+    {
+      "name": "dual/precursor.json",
+      "size": 9216
+    },
+    {
+      "name": "hscode/index.json",
+      "size": 13312
+    }
+  ],
+  "version": "2.0.0",
+  "buildTime": 1785510756440
+}
