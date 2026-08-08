@@ -1,1 +1,7 @@
-{"version":"v2.0.0","total":12030,"updated":"2026-08-02","fields":["code","name","t1-t8","s","i","d","u"],"note":"从Excel 2026年商品编码税率表生成，全量10位code，含申报要素和法定单位"}
+{
+  "version": "2.0.1",
+  "description": "tariff with colloquial aliases",
+  "updated": "2026-08-08T15:12:29.533Z",
+  "total": 12030,
+  "annotated": 58
+}
