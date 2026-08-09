@@ -1,0 +1,138 @@
+name: 税则数据重建流水线
+
+on:
+  # 方式A：网页手动触发（最简单，适合每年更新一次）
+  workflow_dispatch:
+    inputs:
+      excel_file:
+        description: 'Excel文件在仓库中的路径'
+        required: true
+        default: 'data/source/最新税则.xlsx'
+        type: string
+
+  # 方式B：有人上传新Excel文件到 data/source/ 时自动触发
+  push:
+    paths:
+      - 'data/source/**/*.xlsx'
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  rebuild:
+    name: 数据重建 + 上传
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. 检出代码 ──────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. 设置 Python ──────────────────────────────────────────
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install openpyxl jieba
+
+      # ── 3. 设置 Node.js ─────────────────────────────────────────
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ── 4. 确定 Excel 路径 ────────────────────────────────────────
+      - name: Show available source files
+        run: |
+          echo "仓库中的数据源文件:"
+          find data/source -name "*.xlsx" 2>/dev/null || echo "  (空目录)"
+          echo ""
+          echo "将使用的文件: ${{ github.event.inputs.excel_file || 'data/source/*.xlsx (push触发)' }}"
+
+      # ── 5. 生成税则分片 ─────────────────────────────────────────
+      - name: 生成税则分片数据 (p1~p4.json)
+        run: |
+          echo ""
+          echo "=== Step 1: 生成税则分片 ==="
+          python scripts/build_tariff.py "${{ github.event.inputs.excel_file }}"
+        env:
+          # workflow_dispatch 时用户传入的是仓库路径（如 data/source/xxx.xlsx）
+          # 但 Actions checkout 后文件就在 data/source/ 下，直接用即可
+          EXCEL_PATH: ${{ github.event.inputs.excel_file }}
+
+      # ── 6. 生成语义搜索数据 ──────────────────────────────────────
+      - name: 生成语义搜索索引
+        run: |
+          echo ""
+          echo "=== Step 2: 生成语义搜索数据 ==="
+          python scripts/build_semantic.py
+        env:
+          TARIFF_DIR: scripts/tariff_output
+
+      # ── 7. 验证生成物 ───────────────────────────────────────────
+      - name: 验证生成物
+        run: |
+          echo ""
+          echo "=== 验证生成物 ==="
+          echo "税则分片:"
+          for f in scripts/tariff_output/p*.json; do
+            if [ -f "$f" ]; then
+              count=$(python3 -c "import json,sys; d=json.load(open('$f')); print(len(d))")
+              size=$(du -h "$f" | cut -f1)
+              echo "  $f  →  $count 条  $size"
+            fi
+          done
+          echo ""
+          echo "语义搜索:"
+          for f in scripts/semantic_output/*.json; do
+            if [ -f "$f" ]; then
+              size=$(du -h "$f" | cut -f1)
+              echo "  $f  →  $size"
+            fi
+          done
+
+      # ── 8. 上传 GitHub ───────────────────────────────────────────
+      - name: 上传数据到 GitHub CDN
+        run: |
+          echo ""
+          echo "=== Step 3: 上传 GitHub ==="
+          node scripts/upload.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 9. 打版本标签 ───────────────────────────────────────────
+      - name: 打版本标签
+        run: |
+          echo ""
+          echo "=== Step 4: 打版本标签 ==="
+          DATE=$(date +%Y%m%d)
+          FULL_VERSION="data-v${DATE}"
+          echo "标签名: $FULL_VERSION"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          # 删除旧标签（如果存在）
+          git tag -d "$FULL_VERSION" 2>/dev/null || true
+          git push origin :refs/tags/"$FULL_VERSION" 2>/dev/null || true
+          # 打新标签
+          git tag "$FULL_VERSION"
+          git push origin "$FULL_VERSION"
+          echo "✅ 标签 $FULL_VERSION 已推送"
+
+  # ── 失败通知（可选，后续可接飞书/钉钉 webhook）─────────────────
+  failure:
+    needs: rebuild
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 流水线失败通知
+        run: |
+          echo "❌ 税则数据流水线失败，请检查日志"
+          echo "仓库: ${{ github.repository }}"
+          echo "分支: ${{ github.ref_name }}"
+          echo "触发人: ${{ github.actor }}"
+          echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
