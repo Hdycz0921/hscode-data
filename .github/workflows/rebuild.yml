@@ -24,6 +24,11 @@ jobs:
     name: 数据重建 + 上传
     runs-on: ubuntu-latest
 
+    # 显式开 contents 写权限：GITHUB_TOKEN 默认 read-only
+    # 写仓库内容（PUT /contents）和打 tag 必须显式声明
+    permissions:
+      contents: write
+
     steps:
       # ── 1. 检出代码 ──────────────────────────────────────────────
       - name: Checkout repository
