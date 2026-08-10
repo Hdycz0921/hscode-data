@@ -1,7 +1,7 @@
 {
-  "version": "2.0.1",
-  "description": "tariff with full 97-chapter aliases",
-  "updated": "2026-08-09",
-  "total": 12026,
-  "annotated": 10841
+  "version": "v2.0.1",
+  "description": "HS编码数据 2026-08-10 更新版，含税则+语义搜索索引",
+  "updated": "2026-08-10",
+  "total": 12030,
+  "build": "github-actions"
 }
