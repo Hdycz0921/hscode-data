@@ -473,7 +473,31 @@ function ruleBasedSearch(keyword, ctx) {
 
     var ruleScore = chScore + accScore + devScore;
 
-    // === isPartCode 标记:品名含"零件/部件/附件"(兜底品名特征,排序优先)===
+    // === 家具整机查询加权:devScore>0 的家具章节整机品应压过零件品 ===
+    // 搜"沙发"时,整机品"装软垫的坐具"与零件品"坐具的零件"均含"坐具";
+    // 整机品 chScore=50+devScore=30=80,零件品 chScore=50+isPartCode=65 → 零件反超整机
+    // 加权后:整机品 50+30+25=105,零件品 50+15=65,确保整机优先
+    var furnitureBoost = 0;
+    if (devScore > 0) {
+      var isFurnitureChapter = (ch4 === '9401' || ch4 === '9403' || ch4 === '9404');
+      if (isFurnitureChapter) {
+        // 品名含"用/制/坐具/家具"的才是整机,纯零件描述("坐具的零件")不享受加权
+        var整机特征 = (
+          name.indexOf('用') !== -1 ||
+          name.indexOf('制') !== -1 ||
+          name.indexOf('坐具') !== -1 ||
+          name.indexOf('家具') !== -1
+        );
+        // 品名含"零件"→是零件品描述,不进整机加权
+        var isPurePartName = (name.indexOf('零件') !== -1);
+        if (整机特征 && !isPurePartName) {
+          furnitureBoost = 25;
+          ruleScore += furnitureBoost;
+        }
+      }
+    }
+
+    // === isPartCode 标记:品名含"零件/部件/附件"(兜底品名特征)===
     var isPartCode = (
       name.indexOf('零件') !== -1 ||
       name.indexOf('部件') !== -1 ||
