@@ -1,0 +1,56 @@
+{
+  "version": "v2.0.7",
+  "updated": "2026-11-19",
+  "note": "两用物项清单 2026-11-18 版更新；易制毒目录 2026-09-22 版；出口管制公告台账核验于 2026-11-19",
+  "datasets": {
+    "dual": {
+      "path": "dual/dual_data.json",
+      "count": 1099,
+      "listVersion": "《中华人民共和国两用物项出口管制清单》2026-11-18",
+      "basis": [
+        "商务部、海关总署、中央军委装备发展部公告2026年第49号",
+        "商务部、海关总署公告2026年第50号",
+        "商务部、海关总署公告2026年第51号"
+      ],
+      "addedSeqRange": "1065-1098",
+      "added": 34,
+      "revised": 4,
+      "hsIndexKeys": 524,
+      "hsIndexEntries": 903
+    },
+    "precursor": {
+      "path": "precursor/precursor_data.json",
+      "counts": {
+        "sheet1": 63,
+        "uscanada": 18,
+        "myanmar": 41
+      },
+      "basis": "商务部等5部门公告2026年第40号（2026-09-22）易制毒化学品目录第一部分 18 项"
+    },
+    "export_control": {
+      "path": "export_control/export_control.json",
+      "notices": 13,
+      "keywordGroups": 10,
+      "verifiedAt": "2026-11-19"
+    },
+    "other": {
+      "hazmat": {
+        "path": "../v2.0.4/hazmat/hazmat.json",
+        "count": 2830,
+        "note": "已含应急管理部等10部门2026年第3号新增5种（seq 2829-2833），无需更新"
+      },
+      "airports_chinese_names": {
+        "path": "../v2.0.4/airports/chinese_names.json",
+        "note": "2026-11-18 已更新至 567 条"
+      },
+      "tariff": {
+        "path": "../v2.0.1/tariff/*.json",
+        "note": "2026 年度商品编码税率表，无新公告需同步"
+      },
+      "usa_tariff": {
+        "in": "小程序本地 utils/hs_usa_tariff.js",
+        "note": "已对齐税委会公告2026年第6号，10% 保留、暂停至约 2027-01-10"
+      }
+    }
+  }
+}
